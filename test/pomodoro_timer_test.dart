@@ -67,6 +67,18 @@ void main() {
       );
 
       expect(state.formattedTime, '12:34');
+      expect(
+        state
+            .copyWith(
+              remaining: const Duration(
+                minutes: 12,
+                seconds: 33,
+                milliseconds: 1,
+              ),
+            )
+            .formattedTime,
+        '12:34',
+      );
       expect(state.progress, closeTo(746 / 1500, 1e-9));
 
       expect(state.copyWith(remaining: Duration.zero).progress, 1);

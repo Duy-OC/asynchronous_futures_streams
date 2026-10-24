@@ -77,8 +77,9 @@ class PomodoroState {
   /// Remaining time formatted as `MM:SS`.
   String get formattedTime {
     final safeRemaining = remaining.isNegative ? Duration.zero : remaining;
-    final minutes = safeRemaining.inMinutes;
-    final seconds = safeRemaining.inSeconds.remainder(60);
+    final roundedSeconds = (safeRemaining.inMilliseconds + 999) ~/ 1000;
+    final minutes = roundedSeconds ~/ 60;
+    final seconds = roundedSeconds.remainder(60);
     return '${minutes.toString().padLeft(2, '0')}:'
         '${seconds.toString().padLeft(2, '0')}';
   }
