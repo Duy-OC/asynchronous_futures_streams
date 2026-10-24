@@ -3,76 +3,39 @@ import 'dart:async';
 import '../models/pomodoro_state.dart';
 import '../models/session_record.dart';
 
-/// Receives every session that reaches zero, in completion order.
 typedef SessionCompletedCallback = void Function(SessionRecord record);
 
-/// Owns the Pomodoro countdown and exposes its state as a broadcast stream.
-///
-/// The timer is driven by [Timer.periodic]. The remaining time is always
-/// recalculated from an absolute `endTime`, so a late callback cannot make the
-/// countdown drift. When a session finishes the next one starts automatically:
-///
-/// focus -> short break -> focus -> ... -> long break (every
-/// [sessionsBeforeLongBreak] focus sessions).
-///
-/// Pausing/resetting only cancels the ticker; the stream stays open until
-/// [dispose] is called.
 class PomodoroTimer {
   PomodoroTimer({
-    this.focusDuration = const Duration(minutes: 25),
+    Duration focusDuration = const Duration(minutes: 25),
     this.shortBreakDuration = const Duration(minutes: 5),
     this.longBreakDuration = const Duration(minutes: 15),
     this.sessionsBeforeLongBreak = 4,
     this.tickInterval = const Duration(seconds: 1),
     DateTime Function()? now,
     this.onSessionCompleted,
-  }) : assert(
-         focusDuration > Duration.zero,
-         'focusDuration must be greater than zero',
-       ),
-       assert(
-         shortBreakDuration > Duration.zero,
-         'shortBreakDuration must be greater than zero',
-       ),
-       assert(
-         longBreakDuration > Duration.zero,
-         'longBreakDuration must be greater than zero',
-       ),
-       assert(
-         sessionsBeforeLongBreak > 0,
-         'sessionsBeforeLongBreak must be greater than zero',
-       ),
-       assert(
-         tickInterval > Duration.zero,
-         'tickInterval must be greater than zero',
-       ),
+  }) : assert(focusDuration > Duration.zero),
+       assert(shortBreakDuration > Duration.zero),
+       assert(longBreakDuration > Duration.zero),
+       assert(sessionsBeforeLongBreak > 0),
+       assert(tickInterval > Duration.zero),
+       _focusDuration = focusDuration,
        _now = now ?? DateTime.now,
        _state = PomodoroState.initial(
          sessionType: SessionType.focus,
          duration: focusDuration,
        );
 
-  /// Length of a focus session.
-  final Duration focusDuration;
-
-  /// Length of a short break.
+  Duration _focusDuration;
+  Duration get focusDuration => _focusDuration;
   final Duration shortBreakDuration;
-
-  /// Length of a long break.
   final Duration longBreakDuration;
-
-  /// Number of focus sessions that trigger a long break.
   final int sessionsBeforeLongBreak;
-
-  /// How often the countdown is refreshed.
   final Duration tickInterval;
-
-  /// Called synchronously when a session completes.
   final SessionCompletedCallback? onSessionCompleted;
-
-  /// Injectable clock, useful for deterministic tests.
   final DateTime Function() _now;
 
+  // STREAM: phát toàn bộ trạng thái đồng hồ cho giao diện.
   final StreamController<PomodoroState> _stateController =
       StreamController<PomodoroState>.broadcast();
 
@@ -82,19 +45,25 @@ class PomodoroTimer {
   DateTime? _sessionStartedAt;
   bool _disposed = false;
 
-  /// Broadcast stream of state snapshots.
-  ///
-  /// The stream does not replay the current state; new listeners should start
-  /// from [state] (for example with `StreamBuilder.initialData`).
   Stream<PomodoroState> get stream => _stateController.stream;
 
-  /// Current snapshot of the timer.
   PomodoroState get state => _state;
 
-  /// Whether [dispose] has been called.
   bool get isDisposed => _disposed;
 
-  /// Starts a fresh session. When paused, this behaves like [resume].
+  void setFocusDuration(Duration duration) {
+    if (duration <= Duration.zero) {
+      throw ArgumentError.value(duration, 'duration', 'Must be positive');
+    }
+    if (_disposed) return;
+
+    _focusDuration = duration;
+    // Keep an active session intact; the new duration applies next time.
+    if (_state.sessionType == SessionType.focus && _state.isIdle) {
+      _emit(_state.copyWith(remaining: duration, totalDuration: duration));
+    }
+  }
+
   void start() {
     if (_disposed || _state.isRunning) return;
     if (_state.isPaused) {
@@ -106,13 +75,12 @@ class PomodoroTimer {
     _startTicker();
   }
 
-  /// Pauses a running session, keeping the remaining time.
   void pause() {
     if (_disposed || !_state.isRunning) return;
 
     final remaining = _remainingFromEndTime() ?? _state.remaining;
     if (remaining <= Duration.zero) {
-      _completeSession();
+      _completeSession(autoStart: false);
       return;
     }
 
@@ -120,7 +88,6 @@ class PomodoroTimer {
     _emit(_state.copyWith(remaining: remaining, status: TimerStatus.paused));
   }
 
-  /// Continues a paused session from where it stopped.
   void resume() {
     if (_disposed || !_state.isPaused) return;
 
@@ -133,9 +100,6 @@ class PomodoroTimer {
     _startTicker();
   }
 
-  /// Stops the countdown and restores the current session to full duration.
-  ///
-  /// The completed focus session count is preserved.
   void reset() {
     if (_disposed) return;
 
@@ -149,7 +113,7 @@ class PomodoroTimer {
     );
   }
 
-  /// Cancels the ticker and closes the state stream. Further calls are no-ops.
+  // Thoát màn hình: hủy nguồn phát trước, rồi đóng Stream.
   void dispose() {
     if (_disposed) return;
     _disposed = true;
@@ -158,6 +122,7 @@ class PomodoroTimer {
     unawaited(_stateController.close());
   }
 
+  // Tính theo mốc kết thúc để callback trễ không làm đồng hồ chạy chậm.
   void _startTicker() {
     _endTime = _now().add(_state.remaining);
     _ticker?.cancel();
@@ -192,7 +157,7 @@ class PomodoroTimer {
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
-  void _completeSession() {
+  void _completeSession({bool autoStart = true}) {
     if (_disposed) return;
 
     _stopTicker();
@@ -215,23 +180,19 @@ class PomodoroTimer {
     );
     final nextDuration = _durationFor(nextSessionType);
 
-    _sessionStartedAt = completedAt;
-    _endTime = completedAt.add(nextDuration);
+    _sessionStartedAt = autoStart ? completedAt : null;
     _emit(
       PomodoroState(
         sessionType: nextSessionType,
         remaining: nextDuration,
         totalDuration: nextDuration,
-        status: TimerStatus.running,
+        status: autoStart ? TimerStatus.running : TimerStatus.paused,
         completedFocusSessions: completedFocusSessions,
       ),
     );
 
     onSessionCompleted?.call(record);
-    if (_disposed) return;
-
-    // Keep the flow running: breaks and focus sessions switch automatically.
-    _ticker = Timer.periodic(tickInterval, (_) => _onTick());
+    if (!_disposed && autoStart && _state.isRunning) _startTicker();
   }
 
   SessionType _nextSessionType({
@@ -247,7 +208,7 @@ class PomodoroTimer {
 
   Duration _durationFor(SessionType sessionType) {
     return switch (sessionType) {
-      SessionType.focus => focusDuration,
+      SessionType.focus => _focusDuration,
       SessionType.shortBreak => shortBreakDuration,
       SessionType.longBreak => longBreakDuration,
     };

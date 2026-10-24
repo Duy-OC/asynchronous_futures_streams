@@ -177,6 +177,32 @@ void main() {
       });
     });
 
+    test('custom focus duration updates idle timer and future sessions', () {
+      fakeAsync((async) {
+        final timer = PomodoroTimer(
+          focusDuration: const Duration(seconds: 2),
+          shortBreakDuration: const Duration(seconds: 1),
+          now: () => base.add(async.elapsed),
+        );
+
+        timer.setFocusDuration(const Duration(minutes: 10));
+        expect(timer.state.remaining, const Duration(minutes: 10));
+        expect(timer.state.totalDuration, const Duration(minutes: 10));
+
+        timer.start();
+        async.elapse(const Duration(seconds: 1));
+        timer.setFocusDuration(const Duration(minutes: 20));
+        expect(timer.state.totalDuration, const Duration(minutes: 10));
+
+        async.elapse(const Duration(minutes: 9, seconds: 59));
+        expect(timer.state.sessionType, SessionType.shortBreak);
+        async.elapse(const Duration(seconds: 1));
+        expect(timer.state.sessionType, SessionType.focus);
+        expect(timer.state.remaining, const Duration(minutes: 20));
+        timer.dispose();
+      });
+    });
+
     test('counts down, pauses, resumes and completes sessions', () {
       fakeAsync((async) {
         final records = <SessionRecord>[];

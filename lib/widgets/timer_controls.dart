@@ -9,7 +9,6 @@ class TimerControls extends StatelessWidget {
     required this.accent,
     required this.onStart,
     required this.onPause,
-    required this.onResume,
     required this.onReset,
   });
 
@@ -17,7 +16,6 @@ class TimerControls extends StatelessWidget {
   final Color accent;
   final VoidCallback onStart;
   final VoidCallback onPause;
-  final VoidCallback onResume;
   final VoidCallback onReset;
 
   @override
@@ -29,7 +27,7 @@ class TimerControls extends StatelessWidget {
       children: [
         Expanded(
           child: FilledButton.icon(
-            onPressed: running ? onPause : (idle ? onStart : onResume),
+            onPressed: running ? onPause : onStart,
             icon: Icon(
               running ? Icons.pause_rounded : Icons.play_arrow_rounded,
             ),

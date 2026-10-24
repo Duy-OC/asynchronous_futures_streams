@@ -32,4 +32,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Chưa có phiên nào hoàn thành'), findsOneWidget);
   });
+
+  testWidgets('focus duration can be set and restored', (tester) async {
+    await tester.pumpWidget(const FocusFlowApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('TẠO KHÔNG GIAN CHO ĐIỀU QUAN TRỌNG'), findsNothing);
+    expect(
+      find.text('Một việc tại một thời điểm. Bạn làm được mà.'),
+      findsNothing,
+    );
+    await tester.tap(find.text('25 phút'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '40');
+    await tester.tap(find.text('Lưu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('40:00'), findsOneWidget);
+    expect(find.text('40 phút'), findsOneWidget);
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.getInt('focus_flow_focus_minutes'), 40);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(const FocusFlowApp());
+    await tester.pumpAndSettle();
+    expect(find.text('40:00'), findsOneWidget);
+  });
 }
