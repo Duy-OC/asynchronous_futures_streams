@@ -1,30 +1,35 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:pomodoro/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  testWidgets('timer controls and history navigation work', (tester) async {
+    await tester.pumpWidget(const FocusFlowApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('25:00'), findsOneWidget);
+    expect(find.text('Bắt đầu'), findsOneWidget);
+
+    await tester.tap(find.text('Bắt đầu'));
     await tester.pump();
+    expect(find.text('Tạm dừng'), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.tap(find.text('Tạm dừng'));
+    await tester.pump();
+    expect(find.text('Tiếp tục'), findsOneWidget);
+
+    await tester.tap(find.text('Đặt lại'));
+    await tester.pump();
+    expect(find.text('Bắt đầu'), findsOneWidget);
+    expect(find.text('25:00'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.history_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Chưa có phiên nào hoàn thành'), findsOneWidget);
   });
 }
