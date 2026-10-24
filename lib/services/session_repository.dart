@@ -44,6 +44,8 @@ class SessionRepository {
         sessions.add(SessionRecord.fromJson(Map<String, dynamic>.from(entry)));
       } on FormatException {
         // Ignore individual corrupt records and keep the rest of the history.
+      } on TypeError {
+        // Ignore individual corrupt records and keep the rest of the history.
       }
     }
     return sessions;
