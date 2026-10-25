@@ -1,4 +1,4 @@
-﻿# FocusFlow — Pomodoro Timer 🍅
+﻿# FocusFlow — Pomodoro Timer
 
 > Ứng dụng đồng hồ Pomodoro cho Android, xây dựng bằng Flutter/Dart. Minh họa lập trình bất đồng bộ với `Future` và `Stream`.
 
@@ -8,7 +8,7 @@
 
 | Màn hình chính | Phiên nghỉ | Lịch sử |
 |:-:|:-:|:-:|
-| Đồng hồ đếm ngược tập trung 🟢 | Đồng hồ đếm ngược nghỉ ngắn/dài 🟠 | Danh sách phiên đã hoàn thành 📋 |
+| Đồng hồ đếm ngược tập trung | Đồng hồ đếm ngược nghỉ ngắn/dài | Danh sách phiên đã hoàn thành |
 
 > **APK:** `build/app/outputs/flutter-apk/app-release.apk` (~48 MB)
 
@@ -16,14 +16,14 @@
 
 ## 3. Tính năng nổi bật
 
-- ⏱️ **Ba chế độ đồng hồ** — Tập trung (mặc định 25 phút), nghỉ ngắn (5 phút), nghỉ dài (15 phút)
-- ▶️ **Điều khiển đầy đủ** — Start, Pause, Resume và Reset
-- 🔄 **Tự động chuyển phiên** — Sau khi hết giờ, ứng dụng tự chuyển sang phiên tiếp theo
-- ⚙️ **Tuỳ chỉnh thời gian tập trung** — Cài thời gian từ 1–180 phút, lưu vào thiết bị
-- 📊 **Tiến trình theo chu kỳ** — Hiển thị số phiên trong chu kỳ (4 phiên tập trung → nghỉ dài)
-- 💾 **Lịch sử phiên** — Lưu và xem lại toàn bộ lịch sử trên thiết bị
-- 🎨 **Giao diện Material 3** — Màu sắc thay đổi theo trạng thái (xanh = tập trung, cam = nghỉ)
-- 📱 **Không cần mạng / tài khoản** — Hoàn toàn offline, lưu cục bộ
+- **Ba chế độ đồng hồ** — Tập trung (mặc định 25 phút), nghỉ ngắn (5 phút), nghỉ dài (15 phút)
+- **Điều khiển đầy đủ** — Start, Pause, Resume và Reset
+- **Tự động chuyển phiên** — Sau khi hết giờ, ứng dụng tự chuyển sang phiên tiếp theo
+- **Tuỳ chỉnh thời gian tập trung** — Cài thời gian từ 1–180 phút, lưu vào thiết bị
+- **Tiến trình theo chu kỳ** — Hiển thị số phiên trong chu kỳ (4 phiên tập trung → nghỉ dài)
+- **Lịch sử phiên** — Lưu và xem lại toàn bộ lịch sử trên thiết bị
+- **Giao diện Material 3** — Màu sắc thay đổi theo trạng thái (xanh = tập trung, cam = nghỉ)
+- **Không cần mạng / tài khoản** — Hoàn toàn offline, lưu cục bộ
 
 ---
 
@@ -64,9 +64,9 @@
 
 ### Cài APK trực tiếp (nhanh nhất)
 
-1. Sao chép file `app-release.apk` sang điện thoại Android
-2. Vào **Cài đặt → Bảo mật → Cho phép cài đặt từ nguồn không rõ**
-3. Mở file APK và chọn **Cài đặt**
+1. Ấn vào file `app-release.apk` — trình duyệt sẽ tự động tải file về thiết bị
+2. Mở file APK vừa tải xuống và chọn **Cài đặt**
+3. Nếu hệ thống yêu cầu, bật **Cho phép cài đặt từ nguồn không rõ** rồi cài lại
 
 ### Build từ source code
 
@@ -97,13 +97,13 @@ flutter run
 4. Nhấn [Reset] để về lại đầu phiên hiện tại
 5. Khi hết giờ → ứng dụng tự chuyển sang phiên Nghỉ ngắn (5 phút)
 6. Sau 4 phiên tập trung → chuyển sang Nghỉ dài (15 phút)
-7. Nhấn icon ⚙️ (tune) để thay đổi thời gian tập trung (1–180 phút)
-8. Nhấn icon 🕐 (lịch sử) ở góc trên phải để xem lịch sử phiên đã lưu
+7. Nhấn nút cài đặt (tune) để thay đổi thời gian tập trung (1–180 phút)
+8. Nhấn nút lịch sử ở góc trên phải để xem lịch sử phiên đã lưu
 ```
 
 **Màu sắc giao diện:**
-- 🟢 **Xanh lá** — Đang ở phiên Tập trung
-- 🟠 **Cam** — Đang ở phiên Nghỉ ngắn hoặc Nghỉ dài
+- **Xanh lá** — Đang ở phiên Tập trung
+- **Cam** — Đang ở phiên Nghỉ ngắn hoặc Nghỉ dài
 
 ---
 
