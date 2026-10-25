@@ -5,7 +5,7 @@
 \usepackage{fontspec}
 \setmainfont{Liberation Sans}
 \setsansfont{Liberation Sans}
-\setmonofont{DejaVu Sans Mono}[Scale=MatchLowercase]
+\setmonofont{Liberation Mono}
 
 \usepackage[table]{xcolor}
 \usepackage{tikz}
@@ -76,6 +76,7 @@
   backgroundcolor=\color{black!4},
   showstringspaces=false,
   columns=fullflexible,
+  escapeinside={(*@}{@*)},
   keepspaces=true,
   xleftmargin=3pt, xrightmargin=3pt,
   aboveskip=2pt, belowskip=2pt
@@ -642,29 +643,26 @@ class _MyState extends State<MyWidget> {
 
 \begin{frame}{2.1 Kiến trúc project (theo cấu trúc thư mục \texttt{lib/})}
   \centering
-  \resizebox{!}{6.3cm}{%
+  \resizebox{!}{6.2cm}{%
   \begin{tikzpicture}
     \node[base,fp,minimum width=3cm] (main) at (0,3.4) {\textbf{main.dart}\\khởi tạo app, theme Material 3};
-    % UI
     \node[base,fb,minimum width=3.6cm] (ps) at (-4.6,1.6) {\textbf{PomodoroScreen}\\\textbf{StreamBuilder}};
     \node[base,fo,minimum width=4.4cm] (wd) at (0.2,1.6) {\textbf{widgets}\\TimerDisplay $\cdot$ TimerControls\\SessionProgress};
-    \node[base,fb,minimum width=3.2cm] (hs) at (4.9,1.6) {\textbf{HistoryScreen}\\danh sách phiên};
-    % Services
-    \node[base,fg,minimum width=4cm] (pt) at (-4.6,-0.4) {\textbf{PomodoroTimer}\\Timer.periodic\\\textbf{StreamController}};
-    \node[base,fy,minimum width=4cm] (sr) at (4.4,-0.4) {\textbf{SessionRepository}\\\textbf{async/await} + \textbf{Future}};
-    % Models
-    \node[base,fp,minimum width=3.4cm] (st) at (-4.6,-2.4) {\textbf{PomodoroState}\\loại phiên, thời gian, status};
-    \node[base,fr,minimum width=3cm] (rec) at (1.0,-2.4) {\textbf{SessionRecord}\\JSON};
-    \node[base,fr,minimum width=3.2cm] (sp) at (5.2,-2.4) {\textbf{shared\_preferences}\\lưu cục bộ};
-    % layer labels
+    \node[base,fb,minimum width=3.2cm] (hs) at (4.9,1.6) {\textbf{HistoryScreen}\\\textbf{FutureBuilder}};
+    \node[base,fg,minimum width=4cm] (pt) at (-4.6,-0.6) {\textbf{PomodoroTimer}\\Timer.periodic\\\textbf{StreamController}};
+    \node[base,fy,minimum width=4cm] (sr) at (4.4,-0.6) {\textbf{SessionRepository}\\\textbf{async/await} + \textbf{Future}};
+    \node[base,fp,minimum width=3.4cm] (st) at (-4.6,-2.6) {\textbf{PomodoroState}\\loại phiên, thời gian, status};
+    \node[base,fr,minimum width=3cm] (rec) at (1.0,-2.6) {\textbf{SessionRecord}\\JSON};
+    \node[base,fr,minimum width=3.2cm] (sp) at (5.2,-2.6) {\textbf{shared\_preferences}\\lưu cục bộ};
     \node[font=\scriptsize\bfseries,rotate=90] at (-7.2,1.6) {UI};
-    \node[font=\scriptsize\bfseries,rotate=90] at (-7.2,-0.4) {Services};
-    \node[font=\scriptsize\bfseries,rotate=90] at (-7.2,-2.4) {Models / Storage};
+    \node[font=\scriptsize\bfseries,rotate=90] at (-7.2,-0.6) {Services};
+    \node[font=\scriptsize\bfseries,rotate=90] at (-7.2,-2.6) {Models / Storage};
     \draw[arr] (main) -- (ps); \draw[arr] (main) -- (hs);
     \draw[arr] (ps) -- node[lbl,above]{dùng} (wd);
-    \draw[arr] (ps) -- node[lbl,left]{\textbf{Stream}<PomodoroState>} (pt);
+    \draw[arr] ([xshift=-0.8cm]ps.south) -- node[lbl,left]{\textbf{Stream}} ([xshift=-0.8cm]pt.north);
+    \draw[darr] ([xshift=0.8cm]pt.north) -- node[lbl,right]{callback} ([xshift=0.8cm]ps.south);
+    \draw[arr] (ps.south east) -- node[lbl,above,sloped,pos=.55]{\textbf{await} saveSession()} (sr.north west);
     \draw[arr] (hs) -- node[lbl,right]{\textbf{Future}<List>} (hs |- sr.north);
-    \draw[arr] (pt) -- node[lbl,above]{\textbf{await} save()} (sr);
     \draw[arr] (pt) -- (st);
     \draw[arr] (sr) -- (rec);
     \draw[arr] (sr) -- (sp);
@@ -675,16 +673,17 @@ class _MyState extends State<MyWidget> {
 
 \begin{frame}{2.2 Áp dụng \textbf{Future} \& \textbf{Stream} trong project}
   \footnotesize
-  \renewcommand{\arraystretch}{1.55}
+  \renewcommand{\arraystretch}{1.35}
   \centering
-  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{5.9cm}@{}}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.9cm}>{\raggedright\arraybackslash}p{4.6cm}>{\raggedright\arraybackslash}p{5.8cm}@{}}
         \hline
     \rowcolor{cHead}\textbf{Thành phần} & \textbf{Kỹ thuật bất đồng bộ} & \textbf{Vai trò}\\ \hline
-    \textbf{PomodoroTimer} & \api{Timer.periodic} + \api{StreamController} & Mỗi \textbf{1 giây} phát \textbf{PomodoroState} mới (thời gian còn lại, trạng thái)\\ \hline
-    \textbf{PomodoroScreen} & \api{StreamBuilder} & \textbf{Lắng nghe Stream} và cập nhật đồng hồ trên UI, đổi màu theo phiên\\ \hline
-    \textbf{SessionRepository} & \api{async/await} + \api{Future} & Đọc/ghi lịch sử với \api{shared\_preferences} mà \textbf{không chặn UI}\\ \hline
-    \textbf{Dọn dẹp tài nguyên} & \api{cancel()} / \api{close()} / \api{dispose()} & \textbf{Dừng Timer, đóng Stream} khi không còn dùng $\Rightarrow$ tránh \textbf{memory leak}\\ \hline
-    \textbf{Kiểm thử} & \api{fake\_async} & Kiểm thử logic đếm ngược \textbf{không cần chờ thời gian thật}\\ \hline
+    \textbf{PomodoroTimer} & \api{Timer.periodic} + \api{StreamController.broadcast()} & Mỗi \textbf{tick (1 giây)} phát \textbf{PomodoroState} mới qua \textbf{Stream}\\ \hline
+    \textbf{PomodoroScreen} & \api{StreamBuilder} + \api{Future} & \textbf{Lắng nghe Stream} để cập nhật UI; callback \api{onSessionCompleted} xếp hàng lưu bằng \api{\_pendingSave.then()}\\ \hline
+    \textbf{SessionRepository} & \api{async/await} + \api{Future} & \api{loadSessions()} / \api{saveSession()} đọc/ghi \api{shared\_preferences} \textbf{không chặn UI}\\ \hline
+    \textbf{HistoryScreen} & \api{FutureBuilder} & \textbf{Một lần đọc}: đang tải / lỗi / có kết quả\\ \hline
+    \textbf{Dọn dẹp} & \api{\_ticker?.cancel()}, \api{\_stateController.close()}, \api{dispose()} & \textbf{Dừng Timer, đóng Stream} khi rời màn hình $\Rightarrow$ tránh \textbf{memory leak}\\ \hline
+    \textbf{Kiểm thử} & \api{fake\_async} & Kiểm thử đếm ngược \textbf{không cần chờ thời gian thật}\\ \hline
   \end{tabular}
 \end{frame}
 
@@ -693,27 +692,27 @@ class _MyState extends State<MyWidget> {
   \resizebox{\linewidth}{!}{%
   \begin{tikzpicture}
     \node[dot] (s) at (-7.5,1.3) {};
-    \node[base,fy,minimum width=2.5cm] (idle) at (-5.7,1.3) {\textbf{Sẵn sàng}\\(Idle, 25:00)};
+    \node[base,fy,minimum width=2.5cm] (idle) at (-5.7,1.3) {\textbf{Sẵn sàng}\\(idle, 25:00)};
     \node[base,fg,minimum width=2.5cm] (run) at (-2.0,1.3) {\textbf{Đang chạy}\\\textbf{Timer.periodic}};
-    \node[base,fb,minimum width=2.5cm] (fin) at (1.7,1.3) {\textbf{Hết giờ}\\remaining = 0};
-    \node[base,fp,minimum width=2.5cm] (sav) at (5.4,1.3) {\textbf{Lưu lịch sử}\\\textbf{await} save()};
-    \node[base,fo,minimum width=2.5cm] (pau) at (-2.0,-1.3) {\textbf{Tạm dừng}\\(Paused)};
-    \node[base,fr,minimum width=3.6cm] (nxt) at (2.6,-1.3) {\textbf{Chuyển phiên kế tiếp}\\Tập trung $\leftrightarrow$ Nghỉ};
+    \node[base,fb,minimum width=2.5cm] (fin) at (1.7,1.3) {\textbf{Hết giờ}\\remaining $\leq$ 0};
+    \node[base,fp,minimum width=2.9cm] (sav) at (6.2,1.3) {\textbf{Lưu lịch sử}\\\textbf{await} saveSession()};
+    \node[base,fo,minimum width=2.5cm] (pau) at (-2.0,-1.4) {\textbf{Tạm dừng}\\(paused)};
+    \node[base,fr,minimum width=3.6cm] (nxt) at (2.6,-1.4) {\textbf{Phát state phiên kế}\\Tập trung $\leftrightarrow$ Nghỉ};
     \draw[arr] (s) -- (idle);
     \draw[arr] (idle) -- node[lbl,above]{\textbf{Start}} (run);
     \draw[arr] (run) -- node[lbl,above]{về 0} (fin);
-    \draw[arr] (fin) -- node[lbl,above]{\textbf{Future}} (sav);
+    \draw[darr] (fin) -- node[lbl,above]{callback} (sav);
+    \draw[arr] (fin.south) -- node[lbl,right]{\textbf{Stream}} (fin.south |- nxt.north);
+    \draw[arr] (nxt.west) -- node[lbl,above,sloped,pos=.4]{tự chạy tiếp} (run.south east);
     \draw[arr] ([xshift=-0.5cm]run.south) -- node[lbl,left]{\textbf{Pause}} ([xshift=-0.5cm]pau.north);
     \draw[arr] ([xshift=0.5cm]pau.north) -- node[lbl,right]{\textbf{Resume}} ([xshift=0.5cm]run.south);
     \draw[darr] (pau.west) -- node[lbl,below,sloped]{\textbf{Reset}} (idle.south east);
-    \draw[arr] (sav.south) |- node[lbl,pos=.2,right]{hoàn tất} (nxt.east);
-    \draw[arr] (nxt.south) -- ++(0,-0.6) -| node[lbl,pos=.2,below]{phiên mới (tự động chuyển)} (idle.south);
   \end{tikzpicture}}
 \end{frame}
 
 \begin{frame}{2.2 Sơ đồ tuần tự: Stream cập nhật UI \& Future lưu lịch sử}
   \centering
-  \renewcommand{\seqlen}{5.2}
+  \renewcommand{\seqlen}{5.5}
   \resizebox{0.98\linewidth}{!}{%
   \begin{tikzpicture}
     \seqpart{u}{0}{fy}{\textbf{Người dùng}}
@@ -721,16 +720,17 @@ class _MyState extends State<MyWidget> {
     \seqpart{pt}{6.4}{fg}{\textbf{PomodoroTimer}}
     \seqpart{sc}{9.6}{fo}{\textbf{Stream-}\\\textbf{Controller}}
     \seqpart{sr}{12.8}{fp}{\textbf{Session-}\\\textbf{Repository}}
-    \smsg{0}{3.2}{-1.1}{nhấn \textbf{Start}}
-    \smsg{3.2}{6.4}{-1.65}{\textbf{start}()}
-    \draw[black!60,dashed,rounded corners] (5.1,-1.95) rectangle (11.0,-3.6);
-    \node[font=\scriptsize\bfseries,anchor=west,align=left] at (11.1,-2.8) {loop:\\mỗi 1 giây\\(Timer.\\periodic)};
-    \smsg{6.4}{9.6}{-2.6}{\textbf{add}(PomodoroState)}
-    \smsg{9.6}{3.2}{-3.15}{sự kiện mới (\textbf{Stream})}
-    \node[font=\scriptsize,anchor=west] at (3.3,-3.45) {$\Rightarrow$ rebuild đồng hồ};
-    \smsg{6.4}{12.8}{-4.1}{hết giờ: \textbf{await} save(record)}
-    \sret{12.8}{6.4}{-4.65}{\textbf{Future} hoàn thành}
-    \smsg{6.4}{9.6}{-5.1}{\textbf{add}(phiên kế tiếp)}
+    \smsg{0}{3.2}{-1.05}{nhấn \textbf{Start}}
+    \smsg{3.2}{6.4}{-1.55}{\textbf{start}()}
+    \draw[black!60,dashed,rounded corners] (5.1,-1.8) rectangle (11.0,-3.2);
+    \node[font=\scriptsize\bfseries,anchor=west,align=left] at (11.1,-2.5) {loop:\\mỗi tick\\(1 giây)};
+    \smsg{6.4}{9.6}{-2.3}{\textbf{add}(PomodoroState)}
+    \smsg{9.6}{3.2}{-2.85}{sự kiện mới (\textbf{Stream})}
+    \node[font=\scriptsize,anchor=west] at (3.3,-3.15) {$\Rightarrow$ rebuild đồng hồ};
+    \smsg{6.4}{9.6}{-3.85}{hết giờ: \textbf{add}(state phiên kế)}
+    \smsg{6.4}{3.2}{-4.35}{callback \textbf{onSessionCompleted}(record)}
+    \smsg{3.2}{12.8}{-4.85}{\textbf{await} saveSession(record)}
+    \sret{12.8}{3.2}{-5.3}{\textbf{Future} hoàn thành $\rightarrow$ setState}
   \end{tikzpicture}}
 \end{frame}
 
@@ -756,51 +756,132 @@ class _MyState extends State<MyWidget> {
   \small
   \begin{itemize}\itemsep3pt
     \item Ứng dụng đếm \textbf{số phiên tập trung} trong chu kỳ; đủ \textbf{4 phiên} thì chuyển sang \textbf{nghỉ dài}.
-    \item Mỗi lần hết giờ: \textbf{Stream} phát trạng thái cuối $\rightarrow$ \textbf{Future} lưu lịch sử $\rightarrow$ \textbf{tự động} sang phiên kế tiếp.
+    \item Mỗi lần hết giờ: \textbf{Stream} phát state của phiên kế tiếp (\textbf{tự động chạy}) và gọi callback $\rightarrow$ \textbf{Future} lưu lịch sử.
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{2.2 Mã giả minh hoạ: luồng \textbf{Stream} + \textbf{Future} + dọn dẹp}
+\begin{frame}[fragile]{2.2 Code thực tế (1/3): \textbf{Stream} -- \texttt{pomodoro\_timer.dart}}
   \begin{columns}[T]
-    \begin{column}{0.58\textwidth}
-\begin{lstlisting}[basicstyle=\ttfamily\fontsize{6.2}{7.1}\selectfont]
-class PomodoroTimer {
-  final _controller =
-      StreamController<PomodoroState>.broadcast();
-  Stream<PomodoroState> get stream => _controller.stream;
-  Timer? _timer;
+    \begin{column}{0.60\textwidth}
+\begin{lstlisting}[basicstyle=\ttfamily\fontsize{6.4}{7.4}\selectfont]
+// pomodoro_timer.dart
+(*@\texttt{\itshape // STREAM: phát toàn bộ trạng thái đồng hồ cho giao diện.}@*)
+final StreamController<PomodoroState> _stateController =
+    StreamController<PomodoroState>.broadcast();
+Stream<PomodoroState> get stream => _stateController.stream;
 
-  void start() {
-    _timer = Timer.periodic(Duration(seconds: 1), (_) {
-      _remaining -= 1;
-      _controller.add(_currentState);      // (1) Stream
-      if (_remaining == 0) _onFinished();
-    });
-  }
+void _startTicker() {
+  _endTime = _now().add(_state.remaining);
+  _ticker?.cancel();
+  _ticker = Timer.periodic(tickInterval, (_) => _onTick());
+  _emit(_state.copyWith(status: TimerStatus.running));
+}
 
-  Future<void> _onFinished() async {
-    _timer?.cancel();
-    await repository.save(record);         // (2) Future
-    _nextSession();
-  }
+void _emit(PomodoroState nextState) {
+  if (_disposed) return;
+  _state = nextState;
+  _stateController.add(nextState);   (*@\texttt{\itshape // phát cho listener}@*)
+}
 
-  void dispose() {                         // (3) don dep
-    _timer?.cancel();
-    _controller.close();
-  }
+(*@\texttt{\itshape // Thoát màn hình: hủy nguồn phát trước, rồi đóng Stream.}@*)
+void dispose() {
+  if (_disposed) return;
+  _disposed = true;
+  _stopTicker();                     // _ticker?.cancel()
+  unawaited(_stateController.close());
 }
 \end{lstlisting}
     \end{column}
-    \begin{column}{0.4\textwidth}
+    \begin{column}{0.38\textwidth}
       \footnotesize
       \begin{tikzpicture}
-        \node[base,fg,text width=4.7cm,align=left,anchor=north] (a) at (0,0) {\textbf{(1) Stream}\\\api{StreamController.add()} phát \textbf{PomodoroState} mỗi giây; \textbf{StreamBuilder} nhận và vẽ lại UI.};
-        \node[base,fy,text width=4.7cm,align=left,anchor=north] (b) at (0,-2.0) {\textbf{(2) Future}\\\textbf{await} ghi lịch sử xuống \api{shared\_preferences}, \textbf{không chặn} luồng UI.};
-        \node[base,fr,text width=4.7cm,align=left,anchor=north] (c) at (0,-3.9) {\textbf{(3) Dọn dẹp}\\\api{Timer.cancel()} \& \api{close()} khi rời màn hình $\Rightarrow$ tránh \textbf{memory leak}.};
+        \node[base,fg,text width=4.5cm,align=left,anchor=north] at (0,0) {\textbf{Phát dữ liệu}\\\api{Timer.periodic} gọi \api{\_onTick()} mỗi giây; \api{\_emit()} gọi \api{add()} để phát \textbf{PomodoroState}.};
+        \node[base,fb,text width=4.5cm,align=left,anchor=north] at (0,-2.0) {\textbf{Broadcast}\\\api{StreamController.broadcast()} cho phép \textbf{nhiều listener} đăng ký.};
+        \node[base,fr,text width=4.5cm,align=left,anchor=north] at (0,-3.7) {\textbf{Dọn dẹp}\\\api{dispose()}: \textbf{cancel} Timer, rồi \textbf{close} Stream.};
       \end{tikzpicture}
-      \vspace{2pt}
+    \end{column}
+  \end{columns}
+\end{frame}
 
-      {\scriptsize\itshape Mã giả rút gọn để minh hoạ ý tưởng; tên hàm có thể khác code thực tế.}
+\begin{frame}[fragile]{2.2 Code thực tế (2/3): \textbf{StreamBuilder} + \textbf{Future}}
+  \begin{columns}[T]
+    \begin{column}{0.60\textwidth}
+\begin{lstlisting}[basicstyle=\ttfamily\fontsize{6.4}{7.4}\selectfont]
+// pomodoro_screen.dart
+_timer = PomodoroTimer(onSessionCompleted: _saveCompleted);
+(*@\texttt{\itshape // Xếp các lần lưu nối tiếp để hai phiên không ghi đè nhau.}@*)
+void _saveCompleted(SessionRecord record) {
+  _pendingSave =
+      _pendingSave.then((_) => _persistSession(record));
+}
+Future<void> _persistSession(SessionRecord record) async {
+  try {
+    await _repository.saveSession(record);      // FUTURE
+    if (!mounted) return;
+    setState(() { (*@\texttt{\itshape /* cập nhật số phiên đã lưu */}@*) });
+  } catch (_) { (*@\texttt{\itshape /* hiển thị lỗi lưu */}@*) }
+}
+void dispose() {
+  _timer.dispose();
+  super.dispose();
+}
+(*@\texttt{\itshape // StreamBuilder tự đăng ký/hủy lắng nghe}@*)
+body: StreamBuilder<PomodoroState>(
+  stream: _timer.stream,
+  initialData: _timer.state,
+  builder: (context, snapshot) { ... },
+)
+\end{lstlisting}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \footnotesize
+      \begin{tikzpicture}
+        \node[base,fb,text width=4.5cm,align=left,anchor=north] at (0,0) {\textbf{Stream $\rightarrow$ UI}\\\api{StreamBuilder} nhận state mới và vẽ lại đồng hồ.};
+        \node[base,fy,text width=4.5cm,align=left,anchor=north] at (0,-1.7) {\textbf{Future}\\\api{await saveSession()} lưu lịch sử mà \textbf{không chặn UI}; \api{mounted} kiểm tra trước \api{setState}.};
+        \node[base,fr,text width=4.5cm,align=left,anchor=north] at (0,-3.9) {\textbf{Dọn dẹp}\\\api{dispose()} của State gọi \api{\_timer.dispose()}.};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{2.2 Code thực tế (3/3): \textbf{Future} \& \textbf{FutureBuilder}}
+  \begin{columns}[T]
+    \begin{column}{0.60\textwidth}
+\begin{lstlisting}[basicstyle=\ttfamily\fontsize{6.4}{7.4}\selectfont]
+// session_repository.dart
+Future<List<SessionRecord>> loadSessions() async {
+  final preferences = await _preferencesProvider();
+  final raw = preferences.getString(storageKey);
+  if (raw == null || raw.isEmpty) return <SessionRecord>[];
+  ...   (*@\texttt{\itshape // jsonDecode -> danh sách SessionRecord}@*)
+}
+
+Future<void> saveSession(SessionRecord session) async {
+  final sessions = await loadSessions();
+  sessions.add(session);
+  await saveSessions(sessions);
+}
+
+// history_screen.dart
+(*@\texttt{\itshape // Tạo Future một lần, không đọc bộ nhớ lại sau mỗi lần build.}@*)
+_sessions = widget.repository.loadSessions();   // initState
+
+body: FutureBuilder<List<SessionRecord>>(
+  future: _sessions,
+  builder: (context, snapshot) {
+    if (snapshot.connectionState != ConnectionState.done) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    ...
+\end{lstlisting}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \footnotesize
+      \begin{tikzpicture}
+        \node[base,fy,text width=4.5cm,align=left,anchor=north] at (0,0) {\textbf{async/await}\\Đọc/ghi \api{shared\_preferences} bằng \api{await}, trả về \api{Future}.};
+        \node[base,fg,text width=4.5cm,align=left,anchor=north] at (0,-1.7) {\textbf{FutureBuilder}\\Một lần đọc: đang tải $\rightarrow$ lỗi / kết quả $\rightarrow$ hiển thị danh sách.};
+        \node[base,fb,text width=4.5cm,align=left,anchor=north] at (0,-3.5) {\textbf{Link GitHub}\\{\scriptsize\texttt{github.com/Duy-OC/}}\\{\scriptsize\texttt{asynchronous\_futures\_streams}}};
+      \end{tikzpicture}
     \end{column}
   \end{columns}
 \end{frame}
